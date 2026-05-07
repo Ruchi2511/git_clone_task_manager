@@ -29,7 +29,9 @@ Members update job status
         ↓
 Dashboards and activity logs track progress
 ```
+## Live Deployment Link
 
+gitclonetaskmanager-production.up.railway.app
 ---
 
 ## Key Features
