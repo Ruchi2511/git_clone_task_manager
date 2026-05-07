@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ title or "ProjectHub" }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body data-protected="{{ 'true' if session.get('user_id') else 'false' }}">
+
+{% if session.get('user_id') %}
+<!-- ═══ SIDEBAR ═══════════════════════════════════════ -->
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">⬡</div>
+      <span class="brand-name">ProjectHub</span>
+    </div>
+
+    <nav class="sidebar-nav">
+      <span class="nav-section-label">Workspace</span>
+
+      <a href="{{ url_for('dashboard.dashboard') }}" class="nav-item" data-nav="dashboard">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6">
+          <rect x="2" y="2" width="7" height="7" rx="1.5"/>
+          <rect x="11" y="2" width="7" height="7" rx="1.5"/>
+          <rect x="2" y="11" width="7" height="7" rx="1.5"/>
+          <rect x="11" y="11" width="7" height="7" rx="1.5"/>
+        </svg>
+        Dashboard
+      </a>
+
+      <a href="{{ url_for('projects.project_list') }}" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6">
+          <path d="M2 5a2 2 0 012-2h4l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V5z"/>
+        </svg>
+        Projects
+      </a>
+
+      <a href="{{ url_for('profile.profile') }}" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6">
+          <circle cx="10" cy="7" r="3.5"/>
+          <path d="M3 17c0-3.4 3.1-6 7-6s7 2.6 7 6"/>
+        </svg>
+        Profile
+      </a>
+
+      {% if session.get('portal_role') == 'Super User' %}
+        <span class="nav-section-label">Admin</span>
+
+        <a href="{{ url_for('portal.users') }}" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6">
+            <circle cx="10" cy="7" r="3.5"/>
+            <path d="M3 17c0-3.3 3.1-6 7-6s7 2.7 7 6"/>
+          </svg>
+          Portal Users
+        </a>
+
+        <a href="{{ url_for('organizations.create_org') }}" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6">
+            <path d="M3 17V8l7-5 7 5v9M8 17v-5h4v5"/>
+          </svg>
+          New Organization
+        </a>
+      {% endif %}
+    </nav>
+
+    <div class="sidebar-footer">
+      <a href="{{ url_for('profile.profile') }}" class="user-pill" title="Open profile">
+        <div class="user-avatar">{{ session.get('user_name', 'U')[0].upper() }}</div>
+        <div class="user-info">
+          <div class="user-name">{{ session.get('user_name', 'User') }}</div>
+          <div class="user-role">{{ session.get('portal_role', 'Member') }}</div>
+        </div>
+      </a>
+    </div>
+  </aside>
+
+  <!-- mobile overlay -->
+  <div id="sidebar-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:99;"></div>
+  <style>
+    #sidebar-overlay.active { display: block !important; }
+  </style>
+
+  <!-- ═══ MAIN ══════════════════════════════════════════ -->
+  <div class="page-content">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button id="sidebar-toggle" style="display:none; background:none; border:none; color:var(--text-2); padding:6px; cursor:pointer;" aria-label="Menu">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 5h14M3 10h14M3 15h14"/>
+          </svg>
+        </button>
+        {% block breadcrumb %}{% endblock %}
+      </div>
+      <div class="topbar-right">
+        {% block topbar_actions %}{% endblock %}
+      </div>
+    </header>
+
+    <main class="main-wrapper">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-wrapper">
+            {% for category, message in messages %}
+              <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+
+<style>
+@media (max-width: 900px) {
+  #sidebar-toggle { display: flex !important; }
+}
+</style>
+
+{% else %}
+<!-- ═══ NO SIDEBAR (public pages) ════════════════════ -->
+<main>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div style="position:fixed; top:20px; right:20px; z-index:999; width:340px;">
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+{{ self.content() }}
+</main>
+{% endif %}
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

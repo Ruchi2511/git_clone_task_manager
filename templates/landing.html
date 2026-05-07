@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <div class="hero-badge">Project Management Platform</div>
+    <h1>Ship projects<br><span>faster, together</span></h1>
+    <p>A unified workspace for teams to manage projects,<br>
+       track jobs, and hit every deadline with clarity.</p>
+    <div class="hero-actions">
+      {% if session.get('user_id') %}
+        <a href="{{ url_for('dashboard.dashboard') }}" class="btn primary">Open Dashboard</a>
+      {% else %}
+        <a href="{{ url_for('auth.login') }}" class="btn primary">Sign In</a>
+        <a href="{{ url_for('auth.signup') }}" class="btn">First Setup</a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

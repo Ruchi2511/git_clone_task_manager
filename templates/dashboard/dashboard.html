@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+
+{% block breadcrumb %}
+<div class="breadcrumb">
+  <span class="current">Dashboard</span>
+</div>
+{% endblock %}
+
+{% block topbar_actions %}
+{% if super_user %}
+  <a href="{{ url_for('organizations.create_org') }}" class="btn primary">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 1v12M1 7h12"/></svg>
+    New Organization
+  </a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-text">
+    <h1>Dashboard</h1>
+    <p>
+      Welcome back, <strong>{{ session.get('user_name') }}</strong>.
+      {% if super_user %}Super User portal overview.{% else %}Your organization and task activity.{% endif %}
+    </p>
+  </div>
+  <div class="header-actions">
+    <a href="{{ url_for('projects.project_list') }}" class="btn">All Projects</a>
+    {% if super_user %}
+      <a href="{{ url_for('portal.users') }}" class="btn">Portal Users</a>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-label">Total Jobs</div>
+    <div class="stat-value">{{ total_tasks }}</div>
+  </div>
+  <div class="stat-card accent">
+    <div class="stat-label">In Progress</div>
+    <div class="stat-value">{{ in_progress_tasks }}</div>
+  </div>
+  <div class="stat-card success">
+    <div class="stat-label">Completed</div>
+    <div class="stat-value">{{ completed_tasks }}</div>
+  </div>
+  <div class="stat-card danger">
+    <div class="stat-label">Overdue</div>
+    <div class="stat-value">{{ overdue_tasks|length }}</div>
+  </div>
+</div>
+
+<!-- Search & Filters -->
+<section class="section-card">
+  <div class="section-header">
+    <h2>Filters</h2>
+    <a href="{{ url_for('dashboard.dashboard') }}">Clear all</a>
+  </div>
+  <form method="GET" class="filter-bar">
+    <input type="text" name="q" value="{{ search }}" placeholder="Search jobs…">
+    <select name="org_id">
+      <option value="">All Organizations</option>
+      {% for org in organizations %}
+        <option value="{{ org._id }}" {% if selected_org == org._id|string %}selected{% endif %}>{{ org.name }}</option>
+      {% endfor %}
+    </select>
+    <select name="status">
+      <option value="">All Statuses</option>
+      {% for status in ["To Do", "In Progress", "Review", "Done"] %}
+        <option value="{{ status }}" {% if selected_status == status %}selected{% endif %}>{{ status }}</option>
+      {% endfor %}
+    </select>
+    <select name="priority">
+      <option value="">All Priorities</option>
+      {% for priority in ["Low", "Medium", "High", "Critical"] %}
+        <option value="{{ priority }}" {% if selected_priority == priority %}selected{% endif %}>{{ priority }}</option>
+      {% endfor %}
+    </select>
+    <label class="check-filter">
+      <input type="checkbox" name="overdue" value="1" {% if overdue_only %}checked{% endif %}> Overdue only
+    </label>
+    <button type="submit" class="btn primary">Apply</button>
+  </form>
+</section>
+
+<!-- Charts -->
+<div class="chart-grid">
+  <section class="section-card">
+    <div class="section-header"><h2>Jobs by Status</h2></div>
+    <canvas id="statusChart" height="140"></canvas>
+  </section>
+  <section class="section-card">
+    <div class="section-header"><h2>Jobs by Priority</h2></div>
+    <canvas id="priorityChart" height="140"></canvas>
+  </section>
+</div>
+
+<section class="section-card">
+  <div class="section-header"><h2>Jobs per User</h2></div>
+  <canvas id="userChart" height="90"></canvas>
+</section>
+
+<!-- Organizations -->
+<section class="section-card">
+  <div class="section-header">
+    <h2>Your Organizations</h2>
+    {% if super_user %}<a href="{{ url_for('organizations.create_org') }}">+ New</a>{% endif %}
+  </div>
+  {% if organizations %}
+    <div class="card-grid">
+      {% for org in organizations %}
+        <a href="{{ url_for('organizations.org_detail', org_id=org._id) }}" class="project-card">
+          <div class="project-card-top">
+            <h3>{{ org.name }}</h3>
+          </div>
+          <p>{{ org.description or "No description added." }}</p>
+          <small>Created {{ org.created_at.strftime("%d %b %Y") }}</small>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="muted">You are not part of any organization yet.</p>
+  {% endif %}
+</section>
+
+<!-- Jobs Table -->
+<section class="section-card">
+  <div class="section-header"><h2>Jobs</h2></div>
+  {% if assigned_tasks %}
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Job Title</th>
+            <th>Status</th>
+            <th>Priority</th>
+            <th>Due Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for task in assigned_tasks %}
+            <tr class="{% if task.due_date and task.due_date < now and task.status != 'Done' %}row-danger{% endif %}">
+              <td><a class="table-link" href="{{ url_for('tasks.task_detail', task_id=task._id) }}">{{ task.title }}</a></td>
+              <td><span class="badge">{{ task.status }}</span></td>
+              <td><span class="badge priority">{{ task.priority }}</span></td>
+              <td>{% if task.due_date %}{{ task.due_date.strftime("%d %b %Y") }}{% else %}<span class="muted">—</span>{% endif %}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="muted">No jobs match the selected filters.</p>
+  {% endif %}
+</section>
+
+<!-- Activity -->
+<section class="section-card">
+  <div class="section-header"><h2>Recent Activity</h2></div>
+  {% if recent_activities %}
+    <div class="activity-list">
+      {% for activity in recent_activities %}
+        <div class="activity-item">
+          <div class="activity-dot"></div>
+          <div>
+            <p>{{ activity.action }}</p>
+            <small>{{ activity.created_at.strftime("%d %b %Y, %I:%M %p") }}</small>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="muted">No activity yet.</p>
+  {% endif %}
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const statusData   = {{ status_counts|tojson }};
+const priorityData = {{ priority_counts|tojson }};
+const userData     = {{ user_counts|tojson }};
+
+const chartDefaults = {
+  responsive: true,
+  plugins: { legend: { display: false } },
+  scales: {
+    x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8b93a8', font: { family: 'DM Sans' } } },
+    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8b93a8', precision: 0, font: { family: 'DM Sans' } }, beginAtZero: true }
+  }
+};
+
+function makeBarChart(id, labels, values, color = '#4f8ef7') {
+  const el = document.getElementById(id);
+  if (!el || !window.Chart) return;
+  new Chart(el, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Jobs',
+        data: values,
+        backgroundColor: color + '33',
+        borderColor: color,
+        borderWidth: 2,
+        borderRadius: 6,
+      }]
+    },
+    options: chartDefaults
+  });
+}
+
+makeBarChart('statusChart',   Object.keys(statusData),   Object.values(statusData),   '#4f8ef7');
+makeBarChart('priorityChart', Object.keys(priorityData), Object.values(priorityData), '#7c5af6');
+makeBarChart('userChart',     Object.keys(userData),     Object.values(userData),     '#34c78a');
+</script>
+{% endblock %}

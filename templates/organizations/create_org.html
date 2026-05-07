@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block breadcrumb %}<div class="breadcrumb"><span class="current">Create Organization</span></div>{% endblock %}
+{% block content %}
+<div class="form-page">
+  <form method="POST" class="form-card">
+    <h1>Create Organization</h1>
+    <p>Set up a new organization to manage teams and projects.</p>
+    <div class="form-group"><label>Organization Name</label><input type="text" name="name" placeholder="Organization name" required></div>
+    <div class="form-group"><label>Description</label><textarea name="description" placeholder="What does this organization do?"></textarea></div>
+    <button type="submit" class="btn primary">Create Organization</button>
+  </form>
+</div>
+{% endblock %}

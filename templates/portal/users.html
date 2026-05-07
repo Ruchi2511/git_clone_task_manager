@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block breadcrumb %}
+<div class="breadcrumb">
+  <span class="current">Portal Users</span>
+</div>
+{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('portal.create_user') }}" class="btn primary">
+  <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 1v12M1 7h12"/></svg>
+  Create User
+</a>
+<a href="{{ url_for('organizations.create_org') }}" class="btn">New Org</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-text">
+    <h1>Portal Users</h1>
+    <p>Manage user accounts, access levels, and organization membership.</p>
+  </div>
+</div>
+
+<section class="section-card">
+  <form method="GET" class="filter-bar">
+    <input type="text" name="q" value="{{ query }}" placeholder="Search by name or email…" style="flex:1 1 220px;">
+    <select name="status">
+      <option value="all"      {% if status == 'all'      %}selected{% endif %}>All users</option>
+      <option value="active"   {% if status == 'active'   %}selected{% endif %}>Active only</option>
+      <option value="inactive" {% if status == 'inactive' %}selected{% endif %}>Inactive only</option>
+    </select>
+    <button type="submit" class="btn">Filter</button>
+  </form>
+</section>
+
+<section class="section-card">
+  <div class="section-header"><h2>All Portal Users</h2></div>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Portal Role</th>
+          <th>Status</th>
+          <th>Add to Organization</th>
+          <th>Account</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in users %}
+          <tr>
+            <td>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div class="user-avatar" style="width:30px;height:30px;font-size:11px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;flex-shrink:0;">
+                  {{ user.name[0].upper() }}
+                </div>
+                <div>
+                  <div style="font-weight:500;color:var(--text);font-size:13.5px;">{{ user.name }}</div>
+                  <div style="font-size:12px;color:var(--text-3);">{{ user.email }}</div>
+                </div>
+              </div>
+            </td>
+            <td><span class="badge">{{ user.portal_role or "User" }}</span></td>
+            <td>
+              <span class="badge {% if user.is_active %}success{% else %}danger{% endif %}">
+                {{ "Active" if user.is_active else "Inactive" }}
+              </span>
+            </td>
+            <td>
+              <form method="POST"
+                action="{{ url_for('portal.add_user_to_org', org_id=organizations[0]._id) if organizations else '#' }}"
+                class="mini-inline">
+                <select name="org_target"
+                  onchange="this.form.action='/portal/orgs/' + this.value + '/members/add'"
+                  {% if not organizations %}disabled{% endif %}
+                  style="padding:5px 9px;font-size:12px;min-width:130px;">
+                  {% if organizations %}
+                    {% for org in organizations %}
+                      <option value="{{ org._id }}">{{ org.name }}</option>
+                    {% endfor %}
+                  {% else %}
+                    <option>No organizations</option>
+                  {% endif %}
+                </select>
+                <select name="role" style="padding:5px 9px;font-size:12px;">
+                  {% for role in roles %}
+                    <option value="{{ role }}">{{ role }}</option>
+                  {% endfor %}
+                </select>
+                <input type="hidden" name="user_id" value="{{ user._id }}">
+                <button type="submit" class="btn btn-sm" {% if not organizations %}disabled{% endif %}>Add</button>
+              </form>
+            </td>
+            <td>
+              <form method="POST" action="{{ url_for('portal.toggle_user', user_id=user._id) }}">
+                <button type="submit" class="btn btn-sm {% if user.is_active %}danger{% endif %}">
+                  {{ "Deactivate" if user.is_active else "Activate" }}
+                </button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

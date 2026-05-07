@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block breadcrumb %}
+<div class="breadcrumb">
+  <a href="{{ url_for('projects.project_detail', project_id=project_id) }}">Project</a>
+  <span class="sep">/</span>
+  <span class="current">Create Job</span>
+</div>
+{% endblock %}
+{% block content %}
+<div class="form-page">
+  <form method="POST" class="form-card">
+    <h1>Create Job</h1>
+    <p>Add a new task to this project.</p>
+    <input type="hidden" name="project_id" value="{{ project_id }}">
+    <div class="form-group"><label>Job Title</label><input type="text" name="title" placeholder="Enter job title" required></div>
+    <div class="form-group"><label>Description</label><textarea name="description" placeholder="Describe the job…"></textarea></div>
+    <div class="form-group"><label>Priority</label>
+      <select name="priority">
+        {% for p in ["Low","Medium","High","Critical"] %}<option value="{{ p }}">{{ p }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="form-group"><label>Assigned To</label>
+      <select name="assigned_to">
+        <option value="">Unassigned</option>
+        {% for member in members %}<option value="{{ member._id }}">{{ member.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="form-group"><label>Due Date</label><input type="date" name="due_date"></div>
+    <button type="submit" class="btn primary">Create Job</button>
+  </form>
+</div>
+{% endblock %}

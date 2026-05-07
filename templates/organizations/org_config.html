@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block breadcrumb %}
+<div class="breadcrumb">
+  <a href="{{ url_for('organizations.org_detail', org_id=org._id) }}">{{ org.name }}</a>
+  <span class="sep">/</span>
+  <span class="current">Settings</span>
+</div>
+{% endblock %}
+{% block content %}
+<div class="form-page">
+  <form method="POST" class="form-card">
+    <h1>Organization Settings</h1>
+    <p>Update organization configuration.</p>
+    <div class="form-group"><label>Organization Name</label><input type="text" name="name" value="{{ org.name }}" required></div>
+    <div class="form-group"><label>Description</label><textarea name="description">{{ org.description or "" }}</textarea></div>
+    <button type="submit" class="btn primary">Save Settings</button>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="text-align:center;padding:80px 20px;">
+  <div style="font-size:64px;font-family:var(--font-display);font-weight:800;color:var(--accent);margin-bottom:16px;">404</div>
+  <h2 style="font-family:var(--font-display);color:var(--text);margin-bottom:12px;">Page Not Found</h2>
+  <p style="color:var(--text-2);margin-bottom:28px;">The page you're looking for doesn't exist or has been moved.</p>
+  <a href="{{ url_for('dashboard.dashboard') }}" class="btn primary">Back to Dashboard</a>
+</div>
+{% endblock %}

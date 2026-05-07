@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block breadcrumb %}
+<div class="breadcrumb">
+  <span class="current">Projects</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-text">
+    <h1>Projects</h1>
+    <p>All active projects across your organizations.</p>
+  </div>
+</div>
+
+<section class="section-card">
+  {% if projects %}
+    <div class="card-grid">
+      {% for project in projects %}
+        <a href="{{ url_for('projects.project_detail', project_id=project._id) }}" class="project-card">
+          <div class="project-card-top">
+            <h3>{{ project.name }}</h3>
+            <span class="badge">{{ project.status }}</span>
+          </div>
+          <p>{{ project.description or "No description added." }}</p>
+          <div class="progress-wrap">
+            <div class="progress-label">
+              <span>Progress</span>
+              <strong>{{ project.progress or 0 }}%</strong>
+            </div>
+            <div class="progress-bar">
+              <span style="width: {{ project.progress or 0 }}%"></span>
+            </div>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="muted">No projects found yet. Create one from an organization page.</p>
+  {% endif %}
+</section>
+{% endblock %}

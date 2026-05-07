@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block breadcrumb %}<div class="breadcrumb"><span class="current">Edit Project</span></div>{% endblock %}
+{% block content %}
+<div class="form-page">
+  <form method="POST" class="form-card">
+    <h1>Edit Project</h1>
+    <p>Update your project details.</p>
+    <div class="form-group"><label>Project Name</label><input type="text" name="name" value="{{ project.name }}" required></div>
+    <div class="form-group"><label>Description</label><textarea name="description">{{ project.description or "" }}</textarea></div>
+    <div class="form-group"><label>Status</label>
+      <select name="status">
+        {% for s in ["Active","On Hold","Completed"] %}<option value="{{ s }}" {% if project.status==s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="form-group"><label>Deadline</label><input type="date" name="deadline" value="{{ project.deadline.strftime('%Y-%m-%d') if project.deadline else '' }}"></div>
+    <button type="submit" class="btn primary">Save Changes</button>
+  </form>
+</div>
+{% endblock %}

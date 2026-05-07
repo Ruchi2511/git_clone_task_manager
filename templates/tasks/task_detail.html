@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block breadcrumb %}
+<div class="breadcrumb">
+  <a href="{{ url_for('projects.project_list') }}">Projects</a>
+  <span class="sep">/</span>
+  <a href="{{ url_for('projects.project_detail', project_id=project._id) }}">{{ project.name }}</a>
+  <span class="sep">/</span>
+  <span class="current">{{ task.title }}</span>
+</div>
+{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('projects.project_detail', project_id=project._id) }}" class="btn">← Back</a>
+{% if current_is_admin %}
+  <a href="{{ url_for('tasks.edit_task', task_id=task._id) }}" class="btn primary">Edit Job</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-text">
+    <h1>{{ task.title }}</h1>
+    <p>{{ task.description or "No description added." }}</p>
+  </div>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-label">Status</div>
+    <div class="stat-value" style="font-size:18px;">{{ task.status }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Priority</div>
+    <div class="stat-value priority-{{ task.priority|lower }}" style="font-size:18px;">{{ task.priority }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Assigned To</div>
+    <div class="stat-value" style="font-size:18px;">{{ assigned_user.name if assigned_user else "—" }}</div>
+  </div>
+  <div class="stat-card {% if task.due_date and task.due_date < now and task.status != 'Done' %}danger{% endif %}">
+    <div class="stat-label">Due Date</div>
+    <div class="stat-value" style="font-size:18px;">
+      {% if task.due_date %}{{ task.due_date.strftime("%d %b %Y") }}{% else %}—{% endif %}
+    </div>
+  </div>
+</div>
+
+<section class="section-card">
+  <div class="section-header"><h2>Update Status</h2></div>
+  <form method="POST" action="{{ url_for('tasks.update_task_status', task_id=task._id) }}" style="display:flex; gap:10px; align-items:center;">
+    <select name="status" style="min-width:180px;">
+      {% for status in statuses %}
+        <option value="{{ status }}" {% if task.status == status %}selected{% endif %}>{{ status }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn primary">Update</button>
+  </form>
+</section>
+
+<section class="section-card">
+  <div class="section-header"><h2>Comments</h2></div>
+
+  <form method="POST" action="{{ url_for('tasks.add_comment', task_id=task._id) }}" class="comment-form">
+    <textarea name="comment" placeholder="Write a comment…" required></textarea>
+    <div>
+      <button type="submit" class="btn primary">Post Comment</button>
+    </div>
+  </form>
+
+  {% if comments %}
+    <div class="activity-list">
+      {% for item in comments %}
+        <div class="activity-item">
+          <div class="user-avatar" style="width:28px;height:28px;font-size:11px;flex-shrink:0;">
+            {{ (item.user.name if item.user else "?")[0].upper() }}
+          </div>
+          <div>
+            <p><strong>{{ item.user.name if item.user else "Unknown" }}</strong>: {{ item.comment }}</p>
+            <small>{{ item.created_at.strftime("%d %b %Y, %I:%M %p") }}</small>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="muted">No comments yet.</p>
+  {% endif %}
+</section>
+
+{% if current_is_admin %}
+<section class="section-card danger-zone">
+  <div class="section-header"><h2>Danger Zone</h2></div>
+  <p class="muted" style="margin-bottom:16px;">Permanently delete this job and all associated data.</p>
+  <form method="POST" action="{{ url_for('tasks.delete_task', task_id=task._id) }}">
+    <button type="submit" class="btn danger">Delete Job</button>
+  </form>
+</section>
+{% endif %}
+{% endblock %}

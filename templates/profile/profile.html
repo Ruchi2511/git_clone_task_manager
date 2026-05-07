@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+
+{% block breadcrumb %}
+<div class="breadcrumb">
+  <a href="{{ url_for('dashboard.dashboard') }}">Dashboard</a>
+  <span class="sep">/</span>
+  <span class="current">Profile</span>
+</div>
+{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('auth.logout') }}" class="btn danger">Logout</a>
+{% endblock %}
+
+{% block content %}
+<div class="profile-hero section-card">
+  <div class="profile-main">
+    <div class="profile-avatar-large">
+      {{ user.name[0].upper() if user.name else "U" }}
+    </div>
+
+    <div class="profile-copy">
+      <div class="profile-eyebrow">Account Profile</div>
+      <h1>{{ user.name }}</h1>
+      <p>{{ user.email }}</p>
+
+      <div class="profile-badges">
+        <span class="badge accent">{{ user.portal_role or "User" }}</span>
+        {% if user.is_active %}
+          <span class="badge success">Active</span>
+        {% else %}
+          <span class="badge danger">Inactive</span>
+        {% endif %}
+        {% if super_user %}
+          <span class="badge warning">Global Access</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="profile-actions">
+    <a href="{{ url_for('dashboard.dashboard') }}" class="btn">Dashboard</a>
+    <a href="{{ url_for('auth.logout') }}" class="btn danger">Logout</a>
+  </div>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card accent">
+    <div class="stat-label">Organizations</div>
+    <div class="stat-value">{{ organizations|length }}</div>
+  </div>
+
+  <div class="stat-card warning">
+    <div class="stat-label">Active Jobs</div>
+    <div class="stat-value">{{ active_jobs|length }}</div>
+  </div>
+
+  <div class="stat-card success">
+    <div class="stat-label">Completed Jobs</div>
+    <div class="stat-value">{{ completed_jobs|length }}</div>
+  </div>
+
+  <div class="stat-card danger">
+    <div class="stat-label">Overdue Jobs</div>
+    <div class="stat-value">{{ overdue_jobs|length }}</div>
+  </div>
+</div>
+
+<div class="profile-grid">
+  <section class="section-card">
+    <div class="section-header">
+      <h2>Account Details</h2>
+      <span>{{ user.portal_role or "User" }}</span>
+    </div>
+
+    <div class="detail-list">
+      <div class="detail-row">
+        <span>Name</span>
+        <strong>{{ user.name }}</strong>
+      </div>
+      <div class="detail-row">
+        <span>Email</span>
+        <strong>{{ user.email }}</strong>
+      </div>
+      <div class="detail-row">
+        <span>Portal Role</span>
+        <strong>{{ user.portal_role or "User" }}</strong>
+      </div>
+      <div class="detail-row">
+        <span>Account Status</span>
+        <strong>{{ "Active" if user.is_active else "Inactive" }}</strong>
+      </div>
+      <div class="detail-row">
+        <span>Created</span>
+        <strong>
+          {% if user.created_at %}
+            {{ user.created_at.strftime("%d %b %Y") }}
+          {% else %}
+            Not available
+          {% endif %}
+        </strong>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-card">
+    <div class="section-header">
+      <h2>Security</h2>
+      <span>Login tracking</span>
+    </div>
+
+    <p class="muted profile-note">
+      Your active login session is tracked server-side. Logging out invalidates the current session and prevents cached protected pages from reopening.
+    </p>
+
+    <div class="detail-list">
+      <div class="detail-row">
+        <span>Active Sessions</span>
+        <strong>{{ active_sessions|length }}</strong>
+      </div>
+      <div class="detail-row">
+        <span>Current Login</span>
+        <strong>Protected</strong>
+      </div>
+    </div>
+
+    <a href="{{ url_for('auth.logout') }}" class="btn danger profile-logout-btn">Logout from this session</a>
+  </section>
+</div>
+
+<section class="section-card">
+  <div class="section-header">
+    <h2>Your Organizations</h2>
+    {% if super_user %}
+      <a href="{{ url_for('organizations.create_org') }}">Create Organization</a>
+    {% endif %}
+  </div>
+
+  {% if organizations %}
+    <div class="card-grid">
+      {% for org in organizations %}
+        <a href="{{ url_for('organizations.org_detail', org_id=org._id) }}" class="project-card">
+          <div class="project-card-top">
+            <h3>{{ org.name }}</h3>
+            <span class="badge accent">{{ org.role }}</span>
+          </div>
+          <p>{{ org.description or "No description added." }}</p>
+          <small>
+            {% if org.created_at %}
+              Joined workspace created {{ org.created_at.strftime("%d %b %Y") }}
+            {% else %}
+              Organization workspace
+            {% endif %}
+          </small>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="muted">You are not assigned to any organization yet.</p>
+  {% endif %}
+</section>
+
+<section class="section-card">
+  <div class="section-header">
+    <h2>Assigned Jobs</h2>
+    <a href="{{ url_for('dashboard.dashboard') }}">View Dashboard</a>
+  </div>
+
+  {% if assigned_jobs %}
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Job</th>
+            <th>Status</th>
+            <th>Priority</th>
+            <th>Due Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for job in assigned_jobs[:8] %}
+            <tr class="{% if job.due_date and job.due_date < now and job.status != 'Done' %}row-danger{% endif %}">
+              <td>
+                <a href="{{ url_for('tasks.task_detail', task_id=job._id) }}" class="table-link">{{ job.title }}</a>
+              </td>
+              <td><span class="badge">{{ job.status }}</span></td>
+              <td><span class="badge priority priority-{{ job.priority|lower }}">{{ job.priority }}</span></td>
+              <td>
+                {% if job.due_date %}
+                  {{ job.due_date.strftime("%d %b %Y") }}
+                {% else %}
+                  No due date
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="muted">No jobs are assigned to you yet.</p>
+  {% endif %}
+</section>
+
+<section class="section-card">
+  <div class="section-header">
+    <h2>Recent Activity</h2>
+    <span>Latest workspace events</span>
+  </div>
+
+  {% if recent_activities %}
+    <div class="activity-list">
+      {% for activity in recent_activities %}
+        <div class="activity-item">
+          <div class="activity-dot"></div>
+          <div>
+            <p>{{ activity.action }}</p>
+            <small>
+              {% if activity.created_at %}
+                {{ activity.created_at.strftime("%d %b %Y, %I:%M %p") }}
+              {% else %}
+                Recently
+              {% endif %}
+            </small>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="muted">No recent activity available.</p>
+  {% endif %}
+</section>
+{% endblock %}

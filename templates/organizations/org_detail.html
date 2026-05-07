@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block breadcrumb %}
+<div class="breadcrumb">
+  <a href="{{ url_for('dashboard.dashboard') }}">Dashboard</a>
+  <span class="sep">/</span>
+  <span class="current">{{ org.name }}</span>
+</div>
+{% endblock %}
+
+{% block topbar_actions %}
+{% if current_can_manage_org %}
+  <a href="{{ url_for('projects.create_project', org_id=org._id) }}" class="btn primary">
+    <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 1v12M1 7h12"/></svg>
+    New Project
+  </a>
+  <a href="{{ url_for('organizations.org_config', org_id=org._id) }}" class="btn">Settings</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-text">
+    <h1>{{ org.name }}</h1>
+    <p>{{ org.description or "No description added." }}</p>
+  </div>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-label">Members</div>
+    <div class="stat-value">{{ members|length }}</div>
+  </div>
+  <div class="stat-card accent">
+    <div class="stat-label">Projects</div>
+    <div class="stat-value">{{ projects|length }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Jobs</div>
+    <div class="stat-value">{{ jobs|length }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Your Role</div>
+    <div class="stat-value" style="font-size:17px;">{{ current_role }}</div>
+  </div>
+</div>
+
+<!-- Members -->
+<section class="section-card">
+  <div class="section-header"><h2>Members</h2></div>
+
+  {% if current_can_manage_org %}
+    <form method="POST" action="{{ url_for('organizations.add_member', org_id=org._id) }}" class="inline-form">
+      <input type="email" name="email" placeholder="Existing portal user email" required>
+      <select name="role">
+        {% for role in roles %}<option value="{{ role }}">{{ role }}</option>{% endfor %}
+      </select>
+      <button type="submit" class="btn primary">Add Member</button>
+    </form>
+    <p class="muted mini-note">Users must exist in the portal. Super Users can create users from Portal Users.</p>
+  {% endif %}
+
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Joined</th>
+          {% if current_can_manage_org %}<th>Change Role</th><th>Action</th>{% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for member in members %}
+          <tr>
+            <td>
+              <div style="display:flex;align-items:center;gap:9px;">
+                <div class="user-avatar" style="width:26px;height:26px;font-size:10px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;flex-shrink:0;">
+                  {{ member.name[0].upper() }}
+                </div>
+                {{ member.name }}
+              </div>
+            </td>
+            <td style="color:var(--text-3);">{{ member.email }}</td>
+            <td><span class="badge">{{ member.role }}</span></td>
+            <td style="color:var(--text-3);">{{ member.joined_at.strftime("%d %b %Y") }}</td>
+            {% if current_can_manage_org %}
+              <td>
+                <form method="POST" action="{{ url_for('organizations.update_member_role', org_id=org._id) }}" class="mini-inline">
+                  <input type="hidden" name="user_id" value="{{ member.id }}">
+                  <select name="role" style="padding:5px 9px;font-size:12px;">
+                    {% for role in roles %}
+                      <option value="{{ role }}" {% if member.role == role %}selected{% endif %}>{{ role }}</option>
+                    {% endfor %}
+                  </select>
+                  <button type="submit" class="btn btn-sm">Save</button>
+                </form>
+              </td>
+              <td>
+                <form method="POST" action="{{ url_for('organizations.remove_member', org_id=org._id) }}">
+                  <input type="hidden" name="user_id" value="{{ member.id }}">
+                  <button class="btn btn-sm danger" type="submit">Remove</button>
+                </form>
+              </td>
+            {% endif %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Projects -->
+<section class="section-card">
+  <div class="section-header">
+    <h2>Projects</h2>
+    {% if current_can_manage_org %}
+      <a href="{{ url_for('projects.create_project', org_id=org._id) }}">+ New Project</a>
+    {% endif %}
+  </div>
+  {% if projects %}
+    <div class="card-grid">
+      {% for project in projects %}
+        <a href="{{ url_for('projects.project_detail', project_id=project._id) }}" class="project-card">
+          <div class="project-card-top">
+            <h3>{{ project.name }}</h3>
+            <span class="badge">{{ project.status }}</span>
+          </div>
+          <p>{{ project.description or "No description added." }}</p>
+          <div class="progress-wrap">
+            <div class="progress-label">
+              <span>Progress</span>
+              <strong>{{ project.progress or 0 }}%</strong>
+            </div>
+            <div class="progress-bar"><span style="width: {{ project.progress or 0 }}%"></span></div>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="muted">No projects yet.</p>
+  {% endif %}
+</section>
+
+<!-- Activity -->
+<section class="section-card">
+  <div class="section-header"><h2>Recent Activity</h2></div>
+  {% if activities %}
+    <div class="activity-list">
+      {% for activity in activities %}
+        <div class="activity-item">
+          <div class="activity-dot"></div>
+          <div>
+            <p>{{ activity.action }}</p>
+            <small>{{ activity.created_at.strftime("%d %b %Y, %I:%M %p") }}</small>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="muted">No activity yet.</p>
+  {% endif %}
+</section>
+{% endblock %}
